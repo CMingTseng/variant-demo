@@ -1,0 +1,121 @@
+//import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+//plugins {
+//    id("org.springframework.boot")
+//    id("io.spring.dependency-management")
+//    kotlin("jvm")
+//    kotlin("plugin.spring") // id("org.jetbrains.kotlin.plugin.spring")
+//}
+apply plugin: "org.springframework.boot"//plugins{id("org.springframework.boot")}
+apply plugin: "io.spring.dependency-management"//plugins{id("io.spring.dependency-management")}
+apply plugin: "org.jetbrains.kotlin.jvm"//plugins{kotlin("jvm") // id("org.jetbrains.kotlin.jvm")}
+apply plugin: "org.jetbrains.kotlin.plugin.spring" // plugins{kotlin("plugin.spring") // id("org.jetbrains.kotlin.plugin.spring")}
+
+group = "cn.numeron"
+version = "0.0.1-SNAPSHOT"
+//Ref : https://medium.com/@lunay0ung/solved-intellj%EC%97%90%EC%84%9C-gradle%EC%9D%84-%EC%9D%B4%EC%9A%A9%ED%95%98%EC%97%AC-spring-boot-jar-%EB%A7%8C%EB%93%A4%EA%B8%B0-feat-kotlin-ec3c01eb6c97
+//Ref : https://www.baeldung.com/spring-boot-main-class
+springBoot {
+    mainClass.set("cn.numeron.variant.VariantDemoApplicationKt")
+}
+
+manifest {
+    attributes "Main-Class": "cn.numeron.variant.VariantDemoApplicationKt"
+}
+
+bootJar {
+    enabled = true
+    mainClass.set("cn.numeron.variant.VariantDemoApplicationKt")
+    manifest {//here is gen bootjar if use kotlin must "***Kt"
+        attributes 'Start-Class': "cn.numeron.variant.VariantDemoApplicationKt"
+    }
+    baseName = 'gs-rest-service'
+    version =  '0.1.0'
+//    archiveBaseName = rootProject.name
+//    archiveVersion =  rootProject.version
+}
+jar {
+    enabled = true
+    manifest {
+        attributes 'Main-Class': 'cn.numeron.variant.VariantDemoApplicationKt'
+    }
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+sourceSets {
+//    create("actuator") {
+//        java {
+//            srcDirs("src/actuator/kotlin")
+//        }
+//    }
+    actuator{
+        java {
+            srcDirs += ['src/actuator/kotlin']
+        }
+    }
+    dev{
+        java {
+            srcDirs += ['src/dev/kotlin']
+        }
+    }
+}
+
+java {
+    registerFeature('actuator') {
+        usingSourceSet(sourceSets.actuator)
+    }
+
+    registerFeature('dev') {
+        usingSourceSet(sourceSets.dev)
+    }
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+tasks.withType(org.gradle.jvm.tasks.Jar) {
+    exclude("module-info.class","META-INF/*","META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA","META-INF/services/*","META-INF/versions/*","META-INF/versions/9/*")
+}
+
+//tasks.withType<KotlinCompile> {
+//    kotlinOptions {
+//        freeCompilerArgs = listOf("-Xjsr305=strict")
+//        jvmTarget = "11"
+//    }
+//}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        freeCompilerArgs += '-Xjsr305=strict'
+        jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+}
+
+
+
+//tasks.withType<Test> {
+//    useJUnitPlatform()
+//}
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+
+    // actuator
+//    "actuatorImplementation"(project(":app"))
+    actuatorImplementation project(":app")
+//    "actuatorImplementation"("org.springframework.boot:spring-boot-starter-actuator")
+    actuatorImplementation "org.springframework.boot:spring-boot-starter-actuator"
+    actuatorImplementation "org.springframework.boot:spring-boot-starter-web"
+    // dev
+    devImplementation project(":app")
+    devImplementation "org.springframework.boot:spring-boot-starter-actuator"
+    devImplementation "org.springframework.boot:spring-boot-starter-web"
+}
+
+
